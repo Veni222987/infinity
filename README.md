@@ -1,0 +1,2 @@
+# infinity
+Claude Code plugin
