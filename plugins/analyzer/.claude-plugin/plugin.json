@@ -1,0 +1,13 @@
+{
+  "name": "analyzer",
+  "version": "0.1.0",
+  "description": "分析 Git 仓库或服务架构，生成带架构图的 HTML 报告",
+  "author": {
+    "name": "Veni222987",
+    "url": "https://github.com/Veni222987"
+  },
+  "homepage": "https://github.com/Veni222987/infinity",
+  "repository": "https://github.com/Veni222987/infinity",
+  "license": "MIT",
+  "keywords": ["analysis", "architecture", "diagram", "report"]
+}

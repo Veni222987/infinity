@@ -1,0 +1,21 @@
+{
+  "name": "infinity",
+  "owner": {
+    "name": "Veni222987",
+    "url": "https://github.com/Veni222987"
+  },
+  "metadata": {
+    "description": "Infinity 插件市场 —— 为 Claude Code 提供一系列实用插件",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "analyzer",
+      "source": "./plugins/analyzer",
+      "description": "分析 Git 仓库或服务的架构，输出带架构图的精美 HTML 报告",
+      "version": "0.1.0",
+      "category": "analysis",
+      "tags": ["architecture", "analysis", "diagram", "report"]
+    }
+  ]
+}
