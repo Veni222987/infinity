@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>user-service — Service Runtime</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    flowchart: { curve: 'basis', padding: 16 }
+  });
+  // Respect dark mode for mermaid
+  if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+    mermaid.initialize({ theme: 'dark', startOnLoad: true });
+  }
+</script>
+<style>
+  :root {
+    --accent: #10b981;
+    --accent-light: #34d399;
+    --accent-bg: #ecfdf5;
+    --accent-border: #a7f3d0;
+    --bg: #ffffff;
+    --bg-alt: #f9fafb;
+    --text: #111827;
+    --text-secondary: #6b7280;
+    --border: #e5e7eb;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 25px rgba(0,0,0,0.08), 0 4px 10px rgba(0,0,0,0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 200ms ease;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --accent-bg: #064e3b;
+      --accent-border: #065f46;
+      --bg: #111827;
+      --bg-alt: #1f2937;
+      --text: #f9fafb;
+      --text-secondary: #9ca3af;
+      --border: #374151;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+      --shadow-md: 0 4px 6px rgba(0,0,0,0.3), 0 2px 4px rgba(0,0,0,0.2);
+      --shadow-lg: 0 10px 25px rgba(0,0,0,0.4), 0 4px 10px rgba(0,0,0,0.2);
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg-alt);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 32px 24px 48px;
+  }
+
+  /* Hero */
+  .hero {
+    margin-bottom: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .hero h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent);
+    background: var(--accent-bg);
+    border: 1px solid var(--accent-border);
+    border-radius: 999px;
+  }
+  .badge::before {
+    content: '';
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .tagline {
+    width: 100%;
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-top: -4px;
+  }
+
+  /* Card */
+  .card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 24px;
+    margin-bottom: 24px;
+    transition: box-shadow var(--transition), transform var(--transition);
+  }
+  .card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+  .card-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    width: 3px;
+    height: 16px;
+    background: var(--accent);
+    border-radius: 2px;
+  }
+
+  /* Stat Grid */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .stat-card {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    transition: box-shadow var(--transition), transform var(--transition);
+  }
+  .stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-secondary);
+    margin-bottom: 6px;
+  }
+  .stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+  }
+  .stat-value.accent {
+    color: var(--accent);
+  }
+
+  /* Architecture Image */
+  .arch-image-wrap {
+    border-radius: var(--radius);
+    overflow: hidden;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    background: var(--bg);
+  }
+  .arch-image-wrap img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  /* Table */
+  .table-wrap {
+    overflow-x: auto;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    background: var(--bg-alt);
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--accent-bg); }
+  .method {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+  }
+  .method.get { color: #0284c7; background: #e0f2fe; }
+  .method.post { color: #7c3aed; background: #ede9fe; }
+  @media (prefers-color-scheme: dark) {
+    .method.get { color: #38bdf8; background: #0c4a6e; }
+    .method.post { color: #a78bfa; background: #4c1d95; }
+  }
+
+  /* Mermaid container */
+  .mermaid-card {
+    composes: card;
+  }
+  .mermaid-card .mermaid {
+    display: flex;
+    justify-content: center;
+    padding: 8px 0;
+  }
+
+  /* List */
+  .check-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .check-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+  .check-list li::before {
+    content: '';
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    margin-top: 2px;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M5 13l4 4L19 7'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+  .check-list.warn li::before {
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23f59e0b' stroke-width='2.5'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z'/%3E%3C/svg%3E") center/contain no-repeat;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .footer span { opacity: 0.8; }
+
+  /* Responsive */
+  @media (max-width: 640px) {
+    .container { padding: 20px 16px 36px; }
+    .hero h1 { font-size: 1.5rem; }
+    .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+    .card { padding: 18px; }
+    th, td { padding: 8px 10px; font-size: 0.82rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero">
+    <h1>user-service</h1>
+    <span class="badge">Service Runtime</span>
+    <p class="tagline">基于 gRPC 的微服务，负责用户认证与权限管理</p>
+  </div>
+
+  <!-- Overview Stats -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Replicas</div>
+      <div class="stat-value accent">3</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Port</div>
+      <div class="stat-value">8080</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Image</div>
+      <div class="stat-value" style="font-size:1.05rem;">user-svc:v2.1.0</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Latest Deploy</div>
+      <div class="stat-value" style="font-size:1.05rem;">2026-05-21</div>
+    </div>
+  </div>
+
+  <!-- Deployment Topology -->
+  <div class="card">
+    <div class="card-title">Deployment Topology</div>
+    <div class="arch-image-wrap">
+      <img src="https://learn.microsoft.com/en-us/azure/architecture/microservices/design/images/orchestration/multi-container-cluster-with-orchestrator.png"
+           alt="Multi-container cluster with orchestrator architecture"
+           loading="lazy">
+    </div>
+  </div>
+
+  <!-- API Endpoints -->
+  <div class="card">
+    <div class="card-title">API Endpoints</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Method</th>
+            <th>Path</th>
+            <th>Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td><code>/users</code></td>
+            <td>List all users</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td><code>/auth/login</code></td>
+            <td>User authentication</td>
+          </tr>
+          <tr>
+            <td><span class="method post">POST</span></td>
+            <td><code>/auth/refresh</code></td>
+            <td>Refresh access token</td>
+          </tr>
+          <tr>
+            <td><span class="method get">GET</span></td>
+            <td><code>/health</code></td>
+            <td>Health check endpoint</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Middleware Chain -->
+  <div class="card mermaid-card">
+    <div class="card-title">Middleware Chain</div>
+    <div class="mermaid">
+flowchart TD
+    A[API Gateway] --> B[Auth Middleware]
+    B --> C[Rate Limit]
+    C --> D[Logger]
+    D --> E[Request Handler]
+    E --> F[(PostgreSQL)]
+    E --> G[Redis Cache]
+    style F stroke-dasharray: 5 5
+    style G stroke-dasharray: 5 5
+    </div>
+  </div>
+
+  <!-- Service Topology -->
+  <div class="card mermaid-card">
+    <div class="card-title">Service Topology</div>
+    <div class="mermaid">
+flowchart LR
+    subgraph "K8s Cluster"
+        A[Pod 1] --> B[Pod 2]
+        A --> C[Pod 3]
+    end
+    subgraph "External Dependencies"
+        D[(DB)]
+        E[Cache]
+        F[MQ]
+    end
+    A -. gRPC .-> D
+    A -. RESP .-> E
+    A -. AMQP .-> F
+    </div>
+  </div>
+
+  <!-- External Dependencies -->
+  <div class="card">
+    <div class="card-title">External Dependencies</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Service</th>
+            <th>Protocol</th>
+            <th>Target</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>PostgreSQL</td>
+            <td>TCP</td>
+            <td><code>user-db:5432</code></td>
+          </tr>
+          <tr>
+            <td>Redis</td>
+            <td>RESP</td>
+            <td><code>redis-cache:6379</code></td>
+          </tr>
+          <tr>
+            <td>RabbitMQ</td>
+            <td>AMQP</td>
+            <td><code>rabbitmq:5672</code></td>
+          </tr>
+          <tr>
+            <td>gRPC</td>
+            <td>gRPC</td>
+            <td><code>user-db:9090</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Health & Observability -->
+  <div class="card">
+    <div class="card-title">Health &amp; Observability</div>
+    <ul class="check-list">
+      <li><strong>/healthz</strong> — Liveness &amp; readiness probe endpoint</li>
+      <li><strong>Prometheus metrics</strong> — Exposed at <code>/metrics</code>, scrape interval 15s</li>
+      <li><strong>Jaeger tracing</strong> — Distributed tracing with OpenTelemetry SDK</li>
+      <li><strong>Structured logging</strong> — JSON logs shipped to Loki</li>
+    </ul>
+  </div>
+
+  <!-- SLO & Risks -->
+  <div class="card">
+    <div class="card-title">SLO &amp; Risks</div>
+    <ul class="check-list">
+      <li><strong>99.9% SLA</strong> — Monthly uptime target, auto-scaling enabled</li>
+      <li><strong>P99 latency &lt; 200ms</strong> — For all read endpoints</li>
+    </ul>
+    <ul class="check-list warn" style="margin-top: 16px;">
+      <li><strong>DB connection pool</strong> — Risk of exhaustion under burst traffic; monitor <code>pgbouncer</code> active connections</li>
+      <li><strong>Token expiry cascade</strong> — Refresh token rotation failure may cause mass re-auth</li>
+    </ul>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>Generated: 2026-05-22T12:00:00Z</span>
+    <span>Template: service-runtime</span>
+    <span>Source: infinity-analyzer</span>
+  </div>
+
+</div>
+</body>
+</html>

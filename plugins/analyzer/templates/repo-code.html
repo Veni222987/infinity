@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>infinity - 架构分析报告</title>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+  <style>
+    :root {
+      --bg: #ffffff;
+      --bg-secondary: #f8fafc;
+      --text: #1e293b;
+      --text-secondary: #64748b;
+      --text-muted: #94a3b8;
+      --border: #e2e8f0;
+      --card-bg: #ffffff;
+      --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+      --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.08), 0 4px 10px rgba(0, 0, 0, 0.04);
+      --accent: #6366f1;
+      --accent-light: #818cf8;
+      --accent-bg: #eef2ff;
+      --table-stripe: #f8fafc;
+      --mermaid-bg: #fafbfc;
+      --code-bg: #f1f5f9;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --bg-secondary: #1e293b;
+        --text: #f1f5f9;
+        --text-secondary: #94a3b8;
+        --text-muted: #64748b;
+        --border: #334155;
+        --card-bg: #1e293b;
+        --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+        --card-shadow-hover: 0 10px 25px rgba(0, 0, 0, 0.4), 0 4px 10px rgba(0, 0, 0, 0.3);
+        --accent: #818cf8;
+        --accent-light: #a5b4fc;
+        --accent-bg: #1e1b4b;
+        --table-stripe: #1a2332;
+        --mermaid-bg: #161e2e;
+        --code-bg: #334155;
+      }
+    }
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+    }
+
+    /* ---- Hero ---- */
+    .hero {
+      text-align: center;
+      padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 2rem;
+    }
+
+    .hero-badge {
+      display: inline-block;
+      background: var(--accent-bg);
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      margin-bottom: 1rem;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.025em;
+      color: var(--text);
+      margin-bottom: 0.5rem;
+    }
+
+    .hero h1 span {
+      color: var(--accent);
+    }
+
+    .hero p {
+      font-size: 1.125rem;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto;
+    }
+
+    /* ---- Section ---- */
+    .section {
+      margin-bottom: 2.5rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--accent);
+      display: inline-block;
+    }
+
+    /* ---- Stat Cards ---- */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+    }
+
+    .stat-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.25rem 1.5rem;
+      box-shadow: var(--card-shadow);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .stat-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 0.25rem;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .stat-value .mono {
+      font-family: "SF Mono", "Fira Code", "Cascadia Code", monospace;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+
+    /* ---- Tables ---- */
+    .table-wrapper {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--card-shadow);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th {
+      background: var(--bg-secondary);
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      padding: 0.75rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+
+    td {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    tr:nth-child(even) td {
+      background: var(--table-stripe);
+    }
+
+    tr td code {
+      background: var(--code-bg);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+
+    /* ---- Architecture Showcase ---- */
+    .arch-showcase {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      text-align: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .arch-showcase:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--card-shadow-hover);
+    }
+
+    .arch-image {
+      max-width: 100%;
+      height: auto;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .arch-caption {
+      margin-top: 0.75rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    /* ---- Mermaid ---- */
+    .mermaid-container {
+      background: var(--mermaid-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+      overflow-x: auto;
+    }
+
+    .mermaid-container + .mermaid-container {
+      margin-top: 1rem;
+    }
+
+    /* ---- Observations ---- */
+    .observations {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: var(--card-shadow);
+    }
+
+    .observations ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .observations li {
+      position: relative;
+      padding: 0.75rem 0 0.75rem 1.75rem;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .observations li:last-child {
+      border-bottom: none;
+    }
+
+    .observations li::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0.9rem;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent);
+    }
+
+    /* ---- Footer ---- */
+    .footer {
+      margin-top: 3rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid var(--border);
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .footer a:hover {
+      text-decoration: underline;
+    }
+
+    /* ---- Responsive ---- */
+    @media (max-width: 640px) {
+      .container {
+        padding: 1rem;
+      }
+
+      .hero {
+        padding: 2rem 0 1.5rem;
+      }
+
+      .hero h1 {
+        font-size: 1.75rem;
+      }
+
+      .stat-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      th, td {
+        padding: 0.6rem 0.75rem;
+        font-size: 0.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <!-- Hero -->
+    <header class="hero">
+      <div class="hero-badge">repo-code template</div>
+      <h1><span>infinity</span></h1>
+      <p>架构分析报告 &middot; 代码结构与依赖关系可视化</p>
+    </header>
+
+    <!-- Overview Stats -->
+    <section class="section">
+      <h2 class="section-title">概览</h2>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">语言</div>
+          <div class="stat-value">Python</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">类型</div>
+          <div class="stat-value">Monolith</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Commits</div>
+          <div class="stat-value">1,234</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Latest</div>
+          <div class="stat-value"><span class="mono">a1b2c3d</span> 2026-05-20</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Architecture Diagram -->
+    <section class="section">
+      <h2 class="section-title">架构图</h2>
+      <div class="arch-showcase">
+        <img
+          src="https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/media/image5-9.png"
+          alt="系统架构图"
+          class="arch-image"
+          onerror="this.style.display='none'; this.nextElementSibling.textContent='架构图加载失败'"
+        />
+        <p class="arch-caption">系统架构图 &middot; GPT Image 生成</p>
+      </div>
+    </section>
+
+    <!-- Module List -->
+    <section class="section">
+      <h2 class="section-title">模块列表</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>模块</th>
+              <th>路径</th>
+              <th>描述</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>analyzer</code></td>
+              <td><code>plugins/analyzer/</code></td>
+              <td>核心分析引擎，负责代码扫描和依赖解析</td>
+            </tr>
+            <tr>
+              <td><code>cli</code></td>
+              <td><code>plugins/cli/</code></td>
+              <td>命令行入口，提供交互式分析接口</td>
+            </tr>
+            <tr>
+              <td><code>renderer</code></td>
+              <td><code>plugins/renderer/</code></td>
+              <td>模板渲染器，生成 HTML 报告和可视化</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- External Dependencies -->
+    <section class="section">
+      <h2 class="section-title">外部依赖</h2>
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>依赖</th>
+              <th>类型</th>
+              <th>用途</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>psycopg2</code></td>
+              <td>数据库驱动</td>
+              <td>PostgreSQL 连接与查询</td>
+            </tr>
+            <tr>
+              <td><code>redis-py</code></td>
+              <td>缓存客户端</td>
+              <td>Redis 缓存与消息队列</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Data Flow Diagram -->
+    <section class="section">
+      <h2 class="section-title">数据流</h2>
+      <div class="mermaid-container">
+        <pre class="mermaid">
+flowchart LR
+    A[CLI 入口] --> B[分析引擎]
+    B --> C[模板渲染器]
+    B --> D[依赖扫描器]
+    C --> E[HTML 报告]
+    D -. SQL .-> F[(PostgreSQL)]
+    D -. RESP .-> G[Redis]
+    style F stroke-dasharray: 5 5
+    style G stroke-dasharray: 5 5
+        </pre>
+      </div>
+    </section>
+
+    <!-- Module Dependency Diagram -->
+    <section class="section">
+      <h2 class="section-title">模块依赖</h2>
+      <div class="mermaid-container">
+        <pre class="mermaid">
+flowchart TD
+    subgraph "infinity 核心"
+        A[CLI] --> B[Analyzer]
+        B --> C[Renderer]
+        B --> D[Scanner]
+    end
+    subgraph "外部依赖"
+        E[(DB)]
+        F[Cache]
+    end
+    D -.-> E
+    D -.-> F
+        </pre>
+      </div>
+    </section>
+
+    <!-- Observations & Suggestions -->
+    <section class="section">
+      <h2 class="section-title">观察与建议</h2>
+      <div class="observations">
+        <ul>
+          <li>项目采用 Monolith 架构，模块间耦合度适中，建议对 Analyzer 与 Renderer 之间的接口进行更明确的抽象，以降低后续维护成本。</li>
+          <li>外部依赖（PostgreSQL、Redis）通过统一的 Scanner 模块管理，符合单一职责原则；建议增加连接池健康检查和自动重连机制。</li>
+          <li>当前缺少集成测试覆盖 CLI 到 Renderer 的完整数据流，建议补充端到端测试用例以提升发布信心。</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>生成时间：<time id="timestamp"></time></p>
+      <p>模板：<code>repo-code</code> &middot; 来源：<a href="https://github.com/veni/infinity">infinity</a></p>
+    </footer>
+
+  </div>
+
+  <script>
+    // Timestamp
+    document.getElementById('timestamp').textContent = new Date().toLocaleString('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', second: '2-digit'
+    });
+
+    // Mermaid init
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: document.documentElement.classList.contains('dark') ||
+             (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches)
+        ? 'dark'
+        : 'default',
+      flowchart: { useMaxWidth: true, htmlLabels: true, curve: 'basis' }
+    });
+  </script>
+</body>
+</html>

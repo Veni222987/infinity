@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sdk-client — Library SDK Analysis</title>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+  :root {
+    --bg: #f8fafc;
+    --surface: #ffffff;
+    --surface-hover: #f1f5f9;
+    --border: #e2e8f0;
+    --text: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --accent: #0ea5e9;
+    --accent-light: #e0f2fe;
+    --accent-dark: #0284c7;
+    --accent-glow: rgba(14,165,233,0.12);
+    --code-bg: #1e293b;
+    --code-text: #e2e8f0;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.07), 0 2px 4px -2px rgba(0,0,0,0.05);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -4px rgba(0,0,0,0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --transition: 0.2s ease;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --font-mono: "SF Mono", "Fira Code", "Fira Mono", "Roboto Mono", "Courier New", monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-hover: #273548;
+      --border: #334155;
+      --text: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --accent: #38bdf8;
+      --accent-light: rgba(56,189,248,0.12);
+      --accent-dark: #7dd3fc;
+      --accent-glow: rgba(56,189,248,0.15);
+      --code-bg: #0f172a;
+      --code-text: #e2e8f0;
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+      --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.4), 0 2px 4px -2px rgba(0,0,0,0.3);
+      --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -4px rgba(0,0,0,0.3);
+    }
+  }
+
+  html { scroll-behavior: smooth }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.25rem; }
+
+  /* ── Hero ─────────────────────────────────────── */
+  .hero {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .hero-title {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.025em;
+  }
+  .hero-title span { color: var(--accent) }
+  .hero-tagline {
+    font-size: 1.05rem;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: var(--accent-light);
+    color: var(--accent);
+    font-size: 0.75rem;
+    font-weight: 600;
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+
+  /* ── Stat Cards ───────────────────────────────── */
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.15rem 1.25rem;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition), transform var(--transition), border-color var(--transition);
+  }
+  .stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+    border-color: var(--accent);
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+  }
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .stat-value .mono { font-family: var(--font-mono); font-size: 1.1rem; }
+
+  /* ── Section ──────────────────────────────────── */
+  .section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow var(--transition);
+  }
+  .section:hover { box-shadow: var(--shadow-md) }
+  .section-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .section-title::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 1.1rem;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  /* ── Architecture Image ──────────────────────── */
+  .arch-image-wrap {
+    display: flex;
+    justify-content: center;
+    padding: 1rem 0 0.5rem;
+  }
+  .arch-image-wrap img {
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    transition: box-shadow var(--transition), transform var(--transition);
+  }
+  .arch-image-wrap img:hover {
+    box-shadow: var(--shadow-lg);
+    transform: scale(1.01);
+  }
+
+  /* ── Tables ───────────────────────────────────── */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  thead th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+    padding: 0.6rem 0.75rem;
+    border-bottom: 2px solid var(--border);
+  }
+  tbody td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: none }
+  tbody tr { transition: background var(--transition) }
+  tbody tr:hover { background: var(--surface-hover) }
+  .mono { font-family: var(--font-mono); font-size: 0.85rem }
+  .tag {
+    display: inline-block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    background: var(--accent-light);
+    color: var(--accent);
+  }
+  .tag.green  { background: #dcfce7; color: #16a34a }
+  .tag.yellow { background: #fef9c3; color: #a16207 }
+  @media (prefers-color-scheme: dark) {
+    .tag.green  { background: rgba(34,197,94,0.15); color: #4ade80 }
+    .tag.yellow { background: rgba(250,204,21,0.15); color: #facc15 }
+  }
+
+  /* ── Mermaid ──────────────────────────────────── */
+  .mermaid { display: flex; justify-content: center; margin: 0.5rem 0 }
+  .diagram-grid { display: grid; gap: 1.5rem }
+  @media (min-width: 640px) {
+    .diagram-grid { grid-template-columns: 1fr 1fr }
+  }
+  .diagram-grid .section { margin-bottom: 0 }
+
+  /* ── Code Block ──────────────────────────────── */
+  pre.code {
+    background: var(--code-bg);
+    color: var(--code-text);
+    padding: 1.15rem 1.25rem;
+    border-radius: var(--radius-sm);
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    line-height: 1.7;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+  }
+  pre.code .kw   { color: #c084fc }
+  pre.code .str  { color: #34d399 }
+  pre.code .cmt  { color: #64748b; font-style: italic }
+  pre.code .fn   { color: #60a5fa }
+  pre.code .num  { color: #fb923c }
+  pre.code .cls  { color: #f472b6 }
+
+  /* ── Footer ───────────────────────────────────── */
+  .footer {
+    text-align: center;
+    padding: 1.5rem 0 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- ═══ Hero ═══ -->
+  <div class="hero">
+    <div>
+      <h1 class="hero-title"><span>sdk-client</span></h1>
+      <p class="hero-tagline">Python SDK, providing type-safe interfaces to cloud services</p>
+    </div>
+    <span class="badge">library-sdk template</span>
+  </div>
+
+  <!-- ═══ Stat Cards ═══ -->
+  <div class="stats">
+    <div class="stat-card">
+      <div class="stat-label">Package</div>
+      <div class="stat-value mono">sdk-client</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Version</div>
+      <div class="stat-value mono">2.3.1</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Exports</div>
+      <div class="stat-value">24</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Runtime</div>
+      <div class="stat-value mono">Python 3.10+</div>
+    </div>
+  </div>
+
+  <!-- ═══ Library Architecture ═══ -->
+  <div class="section">
+    <h2 class="section-title">Library Architecture</h2>
+    <div class="arch-image-wrap">
+      <img src="https://learn.microsoft.com/en-us/dotnet/architecture/modern-web-apps-azure/media/image5-8.png"
+           alt="Modern library architecture layered diagram" loading="lazy" />
+    </div>
+  </div>
+
+  <!-- ═══ Public API Surface ═══ -->
+  <div class="section">
+    <h2 class="section-title">Public API Surface</h2>
+    <table>
+      <thead>
+        <tr><th>Symbol</th><th>Kind</th><th>Module</th><th>Description</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">Client</td><td><span class="tag">class</span></td><td class="mono">sdk.client</td><td>Main SDK client for cloud service communication</td></tr>
+        <tr><td class="mono">AsyncClient</td><td><span class="tag">class</span></td><td class="mono">sdk.client</td><td>Async variant of the SDK client</td></tr>
+        <tr><td class="mono">Resource</td><td><span class="tag">class</span></td><td class="mono">sdk.models</td><td>Base resource model with validation</td></tr>
+        <tr><td class="mono">Project</td><td><span class="tag">class</span></td><td class="mono">sdk.models</td><td>Project resource representation</td></tr>
+        <tr><td class="mono">Deployment</td><td><span class="tag">class</span></td><td class="mono">sdk.models</td><td>Deployment resource with status tracking</td></tr>
+        <tr><td class="mono">Config</td><td><span class="tag">class</span></td><td class="mono">sdk.models</td><td>Configuration model for client setup</td></tr>
+        <tr><td class="mono">SDKError</td><td><span class="tag">class</span></td><td class="mono">sdk.exceptions</td><td>Base exception for all SDK errors</td></tr>
+        <tr><td class="mono">AuthError</td><td><span class="tag">class</span></td><td class="mono">sdk.exceptions</td><td>Authentication / authorization failure</td></tr>
+        <tr><td class="mono">RateLimitError</td><td><span class="tag">class</span></td><td class="mono">sdk.exceptions</td><td>Rate limit exceeded (429)</td></tr>
+        <tr><td class="mono">create_client</td><td><span class="tag green">func</span></td><td class="mono">sdk.factory</td><td>Factory function to build a configured client</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ Mermaid Diagrams ═══ -->
+  <div class="diagram-grid">
+    <div class="section">
+      <h2 class="section-title">Layer Architecture</h2>
+      <pre class="mermaid">
+flowchart LR
+    subgraph "Public API"
+        A[Client] --> B[Models]
+        A --> C[Exceptions]
+    end
+    subgraph "Internal"
+        D[HTTP Transport] --> E[Serializer]
+        D --> F[Retry Logic]
+    end
+    subgraph "External"
+        G[requests]
+        H[pydantic]
+    end
+    A -.-> D
+    D -.-> G
+    B -.-> H
+    style G stroke-dasharray: 5 5
+    style H stroke-dasharray: 5 5
+      </pre>
+    </div>
+    <div class="section">
+      <h2 class="section-title">Call Flow</h2>
+      <pre class="mermaid">
+flowchart TD
+    A[User Code] --> B[SDK Client]
+    B --> C[Request Builder]
+    C --> D[HTTP Transport]
+    D --> E[Remote API]
+    E --> F[Response Parser]
+    F --> B
+    B --> G[Typed Model]
+    G --> A
+      </pre>
+    </div>
+  </div>
+
+  <!-- ═══ Internal Layers ═══ -->
+  <div class="section">
+    <h2 class="section-title">Internal Layers</h2>
+    <pre class="mermaid">
+flowchart LR
+    A[Public API Layer] --> B[Service Layer]
+    B --> C[Transport Layer]
+    C --> D[HTTP Client]
+    A --> E[Models &amp; Schemas]
+    B --> F[Business Logic]
+    C --> G[Auth Middleware]
+    C --> H[Retry &amp; Timeout]
+    style A fill:#e0f2fe,stroke:#0ea5e9,color:#0f172a
+    style B fill:#f0fdf4,stroke:#22c55e,color:#0f172a
+    style C fill:#fef9c3,stroke:#eab308,color:#0f172a
+    style D fill:#fee2e2,stroke:#ef4444,color:#0f172a
+      </pre>
+  </div>
+
+  <!-- ═══ Dependencies ═══ -->
+  <div class="section">
+    <h2 class="section-title">Dependencies &amp; Peers</h2>
+    <table>
+      <thead>
+        <tr><th>Package</th><th>Constraint</th><th>Type</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">requests</td><td class="mono">&gt;=2.28,&lt;3.0</td><td><span class="tag">runtime</span></td><td>HTTP transport layer</td></tr>
+        <tr><td class="mono">pydantic</td><td class="mono">&gt;=2.0,&lt;3.0</td><td><span class="tag">runtime</span></td><td>Data validation &amp; serialization</td></tr>
+        <tr><td class="mono">typing-extensions</td><td class="mono">&gt;=4.5</td><td><span class="tag">runtime</span></td><td>Backport of newer typing features</td></tr>
+        <tr><td class="mono">httpx</td><td class="mono">&gt;=0.24</td><td><span class="tag yellow">optional</span></td><td>Async HTTP backend (optional)</td></tr>
+        <tr><td class="mono">pytest</td><td class="mono">&gt;=7.0</td><td><span class="tag green">dev</span></td><td>Test framework</td></tr>
+        <tr><td class="mono">mypy</td><td class="mono">&gt;=1.0</td><td><span class="tag green">dev</span></td><td>Static type checking</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ Usage Examples ═══ -->
+  <div class="section">
+    <h2 class="section-title">Usage Examples</h2>
+    <pre class="code"><span class="cmt"># Initialize the SDK client</span>
+<span class="kw">from</span> sdk <span class="kw">import</span> <span class="fn">create_client</span>
+<span class="kw">from</span> sdk.exceptions <span class="kw">import</span> <span class="cls">SDKError</span>, <span class="cls">AuthError</span>
+
+client = <span class="fn">create_client</span>(
+    api_key=<span class="str">"sk-xxxxxxxxxxxx"</span>,
+    timeout=<span class="num">30</span>,
+    retries=<span class="num">3</span>,
+)
+
+<span class="cmt"># List all projects</span>
+projects = client.projects.<span class="fn">list</span>(limit=<span class="num">10</span>)
+<span class="kw">for</span> project <span class="kw">in</span> projects:
+    <span class="fn">print</span>(project.name, project.status)
+
+<span class="cmt"># Create a deployment with error handling</span>
+<span class="kw">try</span>:
+    deployment = client.deployments.<span class="fn">create</span>(
+        project_id=<span class="str">"proj-abc123"</span>,
+        image=<span class="str">"myapp:latest"</span>,
+    )
+    <span class="fn">print</span>(<span class="str">f"Deployed: </span>{deployment.id}<span class="str">"</span>)
+<span class="kw">except</span> <span class="cls">AuthError</span> <span class="kw">as</span> exc:
+    <span class="fn">print</span>(<span class="str">f"Auth failed: </span>{exc}<span class="str">"</span>)
+<span class="kw">except</span> <span class="cls">SDKError</span> <span class="kw">as</span> exc:
+    <span class="fn">print</span>(<span class="str">f"SDK error: </span>{exc}<span class="str">"</span>)</pre>
+  </div>
+
+  <!-- ═══ Compatibility Matrix ═══ -->
+  <div class="section">
+    <h2 class="section-title">Compatibility Matrix</h2>
+    <table>
+      <thead>
+        <tr><th>Python</th><th>Linux</th><th>macOS</th><th>Windows</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">3.10</td><td>Yes</td><td>Yes</td><td>Yes</td><td><span class="tag green">Supported</span></td></tr>
+        <tr><td class="mono">3.11</td><td>Yes</td><td>Yes</td><td>Yes</td><td><span class="tag green">Supported</span></td></tr>
+        <tr><td class="mono">3.12</td><td>Yes</td><td>Yes</td><td>Yes</td><td><span class="tag green">Supported</span></td></tr>
+        <tr><td class="mono">3.13</td><td>Yes</td><td>Yes</td><td>Partial</td><td><span class="tag yellow">Beta</span></td></tr>
+        <tr><td class="mono">3.9</td><td>Yes</td><td>Yes</td><td>Yes</td><td><span class="tag">Deprecated</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ═══ Footer ═══ -->
+  <div class="footer">
+    <span>Generated 2026-05-22 10:30 UTC</span>
+    <span>Template: library-sdk &middot; Refined Card Style</span>
+    <span>Source: sdk-client v2.3.1 analysis</span>
+  </div>
+
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'default',
+    flowchart: { curve: 'basis', padding: 16 },
+    securityLevel: 'loose',
+  });
+</script>
+</body>
+</html>
